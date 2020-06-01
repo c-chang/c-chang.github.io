@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+        body {
+            padding: 100px;
+            width: 1000px;
+            margin: auto;
+            text-align: left;
+            font-weight: 300;
+            font-family: 'Open Sans', sans-serif;
+            color: #121212;
+            background-color: #fad1e3;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+    </style>
+    <title>CS 184 MeshEdit</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2020</h1>
+<h1 align="middle">Project 2: MeshEdit</h1>
+<h2 align="middle">Cynthia Chang, CS184-ADH</h2>
+
+<br><br>
+
+<div>
+
+    <h2 align="middle">Overview</h2>
+    <p>This project walked through the ways visualize and edit meshes for graphical representation. First, I performed operations on Bezier curves, which were then extended to Bezier surfaces. In the second portion, I worked with triangle meshes, performing flips and splits, and then generalizing those to loop subdivision.
+    </p>
+
+    <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+    <h3 align="middle">Part 1: Bezier Curves with 1D de Casteljau Subdivision</h3>
+    <p>Essentially, de Casteljau’s algorithm takes a set of n control points and calculates using linear interpolation all of the intermediary points between each line segment. This returns n-1 intermediary points at the ith evaluation level. After performing this calculation on each new set of intermediary points, the algorithm eventually reaches a single point, and that is the final interpolated vector which is used to calculate and draw the Bezier curve. This function requires only implementing a single level of subdivision, I created a for loop iterating through the points of the Vector2D input, which calculates the equation (1-t)p_i + t(p_{i + 1}) per point, adding each result to a new std::Vector2D output.</p>
+    <div align="middle">
+        <table style="...">
+            <tr>
+                <td>
+                    <img src="imgs/p1_1.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p1_2.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p1_3.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+            </tr>
+            <br>
+            <tr>
+                <td>
+                    <img src="imgs/p1_4.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p1_5.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p1_6.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+            </tr>
+            <br>
+            <tr>
+                <td>
+                    <img src="imgs/p1_7.png" align="midle" width="400px"/>
+                    <figcaption align="middle"></figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <p>In the photos above, from left to right, top to bottom, we have the Bezier curve with 6 control points and each evaluation step.</p>
+    <td>
+        <img src="imgs/p1_8.png" align="midle" width="400px"/>
+        <figcaption align="middle">Adjusted control points</figcaption>
+    </td>
+    <td>
+        <img src="imgs/p1_9.png" align="midle" width="400px"/>
+        <figcaption align="middle">Adjusted "t" value</figcaption>
+    </td>
+
+    <br>
+
+    <h3 align="middle">Part 2: Bezier Surfaces with Separable 1D de Casteljau</h3>
+    <p>The de Casteljau algorithm for Bezier surfaces is an extension to the Bezier curve algorithm, where the basic calculations have not changed. For surfaces, first interpolate for each row using the u parameter, across the n rows of the n x m input matrix controlPoints. The matrix is now simplified to a 2D vector of 3D vectors case again, similar to Part 1. To finish, interpolate (intuitively vertically) using the parameter v across the previously interpolated vectors. This returns the surface position given parameters (u, v). The lerp equation at the very basic level (interpolating across the 1D space) is still the same as Part 1: (1-t)p_i + t(p_{i + 1}), except here t=u when interpolating each row, and t=v when interpolating across the interpolated rows.</p>
+    <div align="middle">
+        <img src="imgs/p2.png" align="middle" width="400px"/>
+        <figcaption align="middle">teapot.dae</figcaption>
+    </div>
+
+    <br><br>
+    <h2 align="middle">Section II: Triangle Meshes and Half-Edge Data Structure</h2>
+
+    <h3 align="middle">Part 3: Area-Weighted Vertex Normals</h3>
+    <p>I implemented the area-weighted normals by iterating through each neighboring vertex of the centered vertex two at a time (ie: neighbor and neighbor + 1), calculating the positional difference of the neighbor vertices and the centered vertex, and then took the cross product of the two, adding it to an accumulating Vector3D object. Then at the very end, I took the unit of that Vector3D object to get the area-weighted vector normal.</p>
+    <div align="middle">
+        <table style="...">
+            <tr>
+                <img src="imgs/p3_1.png" align="middle" width="400px"/>
+                <figcaption align="middle">Flat shading</figcaption>
+            </tr>
+            <tr>
+                <img src="imgs/p3_2.png" align="middle" width="400px"/>
+                <figcaption align="middle">Phong shading</figcaption>
+            </tr>
+        </table>
+    </div>
+
+    <h3 align="middle">Part 4: Edge Flip</h3>
+    <p>To implement, I drew out two triangles and labeled them with all of the elements (faces, vertices, half-edges, and edges). Then, using the given e0, I first checked if it was a boundary, returning immediately if so. If not, I pulled all of the elements out using e0, and then reassigned them using the Halfedge::setNeighbors() method, returning e0 at the end. Luckily for me, this worked well and I did not have many issues to debug, except just double-checking that my reassignments were correct.
+    </p>
+    <div align="middle">
+        <table style="...">
+            <tr>
+                <td>
+                    <img src="imgs/p4_1.png" align="middle" width="400px"/>
+                    <figcaption align="middle">No flips</figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p4_2.png" align="middle" width="400px"/>
+                    <figcaption align="middle">Center edge flipped</figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p4_3.png" align="middle" width="400px"/>
+                    <figcaption align="middle">Left side edge flipped</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h3 align="middle">Part 5: Edge Split</h3>
+    <p>The implementation for edge splitting was the same as the implementation for Part 4, with the addition of new face, vertex, edge, and halfedge elements. After creating the new midpoint vertex and setting its position to the middle of the splitting edge, the process of reassignment was the same. I was very careful with my assignments and did not have any issues when I ran the program.
+    </p>
+    <div align="middle">
+        <table style="...">
+            <tr>
+                <td>
+                    <img src="imgs/p5_1.png" align="middle" width="400px"/>
+                    <figcaption align="middle">No splits</figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p5_2.png" align="middle" width="400px"/>
+                    <figcaption align="middle">Random splitting</figcaption>
+                </td>
+            </tr>
+            <br>
+            <tr>
+                <td>
+                    <img src="imgs/p5_3.png" align="middle" width="400px"/>
+                    <figcaption align="middle">No splits or flips</figcaption>
+                </td>
+                <td>
+                    <img src="imgs/p5_4.png" align="middle" width="400px"/>
+                    <figcaption align="middle">Random splits and flips</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 ClothSim</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2020</h1>
+<h1 align="middle">Project 4: Cloth Simulator</h1>
+<h2 align="middle">CYNTHIA CHANG, CS184-ADH</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+    <p>
+        In this project, I was able to walk through the process of generating a cloth simulation. The cloth was simulated using a
+        grid structure of point masses and pairwise combinations of springs between them, allowing for the mimicking of the movement of
+        most fabrics. Then, I used Verlet integration to calculate the physical forces being exerted on these individual masses, and
+        also looked at how collisions with objects as well as the grid-cloth itself affected these point masses and their forces. Lastly,
+        shaders were implemented using OpenGLSL in order to emulate different effects and textures on the cloth material.
+        Obstacles that I encountered were mostly due to typos or incorrect vector arithmetic. Overall, I thought this
+        project was very fun and allowed me to see how the movement of materials is implemented!
+    </p>
+
+<h2 align="middle">Part I: Masses and Springs</h2>
+    <p>In this portion, I implemented an evenly-spaced grid of point masses, then assigned specific combinations of springs to them depending on certain constraints as stated in the spec. Overall it was straight-forward, minus a few bugs where I was mis-checking whether a neighbor was still in the grid. Below are some screenshots of /scene/pinned2.json showing the wireframe of the cloth, and several different views with and without certain spring constraints.</p>
+    <div align="center">
+        <td align="middle">
+            <img src="1a.png" width="480" />
+            <figcaption align="middle">Cloth Wireframe of scene/pinned2.json</figcaption>
+        </td>
+        <table style="width:100%">
+                <td align="left">
+                    <img src="1b.png" width="480" />
+                    <figcaption align="middle">No Shearing</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="1e.png" width="480" />
+                    <figcaption align="middle">Only Shearing</figcaption>
+                </td>
+        </table>
+        <td align="middle">
+            <img src="1d.png" width="480" />
+            <figcaption align="middle">All Constraints</figcaption>
+        </td>
+    </div>
+
+<h2 align="middle">Part II: Numerical Integration</h2>
+    <div align="center">
+        <td align="middle">
+            <img src="2a.png" width="480" />
+            <figcaption align="middle">scene/pinned4.json at final rest</figcaption>
+        </td>
+    </div>
+    <p> In this portion of the project, I used Newton's famous F=ma equation to calculate overall force on each individual point mass, and Verlet integration
+        as per the spec to find the new positions of each point mass per new time step.
+        Then I had to constrain the springs so that they would not infinitely stretch, using the paper by Provot.
+        Some bugs that I ran into involved making sure that my vector directions were correct, as well as remembering to scale vectors correctly.</p>
+    <br>
+    <p> Below are various .GIF representations of the screen records I grabbed while simulating the cloth draping.
+        Comparing the output while adjusting spring constant ks, we can see that the lower the ks value, the more structure the material has, giving a stiffer representation.
+        The higher the ks value, the stretchier the spring, and the rippling effect is intensified. With density, lower values give a more floaty material,
+        and it drapes slower than more dense cloth simulations. Similarly, damping caused the cloth to act like the air around it became more dense.
+        In other words, dampening caused the cloth to drape in a "moving through honey" fashion, while no damping meant no resistance, thus the cloth
+        would swing back and forth until it settled into the final resting state.</p>
+    <div>
+        <table style="width:100%">
+            <tr>
+                <td align="left">
+                    <img src="2b.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=0; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="2c.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=50; d=0.2</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <img src="2a.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=5000; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="2d.gif" width="480" />
+                    <figcaption align="middle">density=3; ks=50; d=0.2</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <img src="2e.gif" width="480" />
+                    <figcaption align="middle">density=1500; ks=50; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="2h.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=50; d=0.0</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <img src="2g.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=50; d=0.39</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="2f.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=50000; d=0.0</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+<h2 align="middle">Part III: Collisions with Others</h2>
+    <div align="center">
+        <td align="middle">
+            <img src="3a.png" width="480" />
+            <figcaption align="middle">Cloth resting on scene/plane.json</figcaption>
+        </td>
+    </div>
+    <p>In this part, I implemented sphere and plane primitive collisions with the cloth by calculating tangents
+        intersections, and then creating a correction vector scaled by the value of friction to adjust the position
+        of the point mass, "bumping up" masses that would have "gone through" the primitive onto the surface of the
+        primitive instead. Below, .GIF renderings of scene/sphere.json show some interesting and notable differences
+        when the spring constant value ks is adjusted. With a low spring constant, as in Part II, the material is softer
+        and stretchier, thus wraps more fully around the sphere. The higher the spring constant, the more rigid the material,
+        which results in a less shapely wrapping of the primitive, as seen below when ks = 50,000.
+    </p>
+    <div>
+        <table style="width:100%">
+            <tr>
+                <td align="left">
+                    <img src="3b.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=500; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="3c.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=5,000; d=0.2</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div align="center">
+        <td align="middle">
+            <img src="3d.gif" width="480" />
+            <figcaption align="middle">density=3; ks=50,000; d=0.2</figcaption>
+        </td>
+    </div>
+
+<h2 align="middle">Part IV: Self-Collisions</h2>
+    <p>This portion involved implementing a hashing function to hash the positions of each point mass into a 3D volume
+        with parameters w, h, and t. I implemented a polynomial hash function, and used that hash function to fill in a
+        hash map of all point masses, where each key is mapped to a vector of point mass pointers. This allowed me to quickly
+        check for the nearest neighbors of each point mass that were likely to collide with the current point mass, and thus
+        if the distance between these two masses is within a certain range, I calculated the correction vector and
+        adjusted the position of the point mass as needed. A few bugs that I ran into involved making sure that my
+        directional vectors were a) normalized and b) pointed in the right direction. Additionally, I discovered that my
+        bounds were incorrect in collision/plane - fixing that prevented my cloth from slipping through the plane when ks was small.
+    </p>
+    <p>
+        Below are double-timed .GIF renderings of scene/selfCollision.json, with the density and ks parameters adjusted.
+        A lower ks value meant softer material, and resulted in more and faster folds. Higher ks values indicate stiffer
+        material, thus less and slower folds, as the cloth is more rigid. With density, a low value resulted in smoother folding
+        and less ripples, whereas the high density parameter looked like the cloth was crushing itself on impact, with lots
+        of quick and little ripples throughout all the contact point. Overall, it was very interesting to see and watch!
+    </p>
+    <div>
+        <table style="width:100%">
+            <tr>
+                <td align="left">
+                    <img src="4a.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=5000; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="4b.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=500; d=0.2</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <img src="4c.gif" width="480" />
+                    <figcaption align="middle">density=15; ks=50000; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="4d.gif" width="480" />
+                    <figcaption align="middle">density=5; ks=5000; d=0.2</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <img src="4e.gif" width="480" />
+                    <figcaption align="middle">density=500; ks=5000; d=0.2</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="4h.gif" width="480" />
+                    <figcaption align="middle">For fun: density=100; ks=1000; d=0.0</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+<h2 align="middle">Part V: Shaders</h2>
+    <p> A shader program is a program that runs on the GPU while computations like raytracing run on the CPU in parallel.
+        These programs are useful because it can take an input and output a single 4-D vector containing information
+        about said vertex, such as displacement or color. For OpenGL, there are vertex and fragment shaders. The former
+        adjusts aspects of the vertex (position, etc), while the latter looks at post-rasterization aspects, such as color.
+    </p>
+    <p>
+        Blinn-Phong shading, shown below, takes the summation of the ambient, diffuse, and specular highlight output values,
+        and shades the render such that we get the natural variation as light reflects/refracts around the environment.
+    </p>
+    <div>
+        <table style="width:100%">
+            <tr>
+                <td align="left">
+                    <img src="5a.png" width="480" />
+                    <figcaption align="middle">Ambient-only Blinn-Phong</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="5b.png" width="480" />
+                    <figcaption align="middle">Diffuse-only Blinn-Phong</figcaption>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <img src="5c.png" width="480" />
+                    <figcaption align="middle">Specular-only Blinn-Phong</figcaption>
+                </td>
+                <td align="middle">
+                    <img src="5d.png" width="480" />
+                    <figcaption align="middle">Complete Blinn-Phong</figcaption>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <p>
+        Below is /scene/sphere.json with a texture map of an alpaca image I found on the internet, followed by the
+        mirror shader I implemented depicted on the cloth prior to impact, the sphere prior to impact, and finally
+        the draping.
+    </p>
+    <div align="center">
+        <td align="middle">
+            <img src="5e.png" width="480" />
+            <figcaption align="middle">Alpaca-mapped sphere.json</figcaption>
+        </td>
+    </div>
+    <div align="center">
+        <table style="...">
+            <div align="center">
+                <tr>
+                    <td align="left">
+                        <img src="5f.png" width="480" />
+                        <figcaption align="middle">Mirror shader on cloth</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="5g.png" width="480" />
+                        <figcaption align="middle">Mirror shader on sphere</figcaption>
+                    </td>
+                </tr>
+            </div>
+        </table>
+    </div>
+    <div align="center">
+        <td align="middle">
+            <img src="5h.png" width="480" />
+            <figcaption align="middle">Mirror shader sphere.json</figcaption>
+        </td>
+    </div>
+    <p>
+        Lastly, below is sphere.json with the alpaca texture map again, for both bump (left column) and displacement (right column)
+        mapping. The first row is a view from below the sphere to see the texture mapping on both the cloth and the sphere.
+        The second and third rows compare between bump and displacement, and sphere coarseness of 16 versus 128. We can see that
+        the more coarse the sphere, the less "fine" the texture mapping results in once the cloth has impacted the sphere.
+        Vice versa, the more detailed the spheres, the more detailed the textures are, and the alpaca's fur is much more
+        apparent in both the height of the displacement, and the bumps raised on the bump shading. Overall, bump shading
+        generates a much more coherent mapping of the alpaca, whereas the heights caused by geometrical displacement kind of make
+        the left column a general mess. I imagine though that displacement mapping would make really cool pop-up 3D shadings!
+        For all renders, normal=100 and height=0.1.
+    </p>
+    <div align="center">
+        <table style="...">
+            <div align="center">
+                <tr>
+                    <td align="left">
+                        <img src="5i.png" width="480" />
+                        <figcaption align="middle">Displacement with Alpaca texture</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="5k.png" width="480" />
+                        <figcaption align="middle">Bump with Alpaca texture</figcaption>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left">
+                        <img src="5j.png" width="480" />
+                        <figcaption align="middle">Displacement with Alpaca texture, coarse=16</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="5l.png" width="480" />
+                        <figcaption align="middle">Bump with Alpaca texture, coarse=16</figcaption>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left">
+                        <img src="5m.png" width="480" />
+                        <figcaption align="middle">Displacement with Alpaca texture, coarse=128</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="5n.png" width="480" />
+                        <figcaption align="middle">Bump with Alpaca texture, coarse=128</figcaption>
+                    </td>
+                </tr>
+            </div>
+        </table>
+    </div>
+</div>
+</body>
+</html>
